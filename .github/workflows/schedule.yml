@@ -43,8 +43,8 @@ jobs:
     - name: push to origin master
       run: |
         echo "start push"
-        git config --global user.name "shibing624"
-        git config --global user.email "shibing624@126.com"
+        git config --global user.name "duanbiao2000"
+        git config --global user.email "duanbiao2000@gmail.com"
         git pull --rebase
         git add markdowns/*.md
         git commit -m $(date '+%Y-%m-%d')
