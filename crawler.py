@@ -185,7 +185,7 @@ def job():
     print('save markdown file to {filename}'.format(filename=filename))
 
     # 将生成的Markdown文件添加到Git仓库并提交（注：此处缺少函数定义）
-    git_add_commit_push(strdate = today_str, filename = filename)
+    # git_add_commit_push(strdate, filename)
 
 
 if __name__ == '__main__':
