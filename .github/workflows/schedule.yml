@@ -49,4 +49,4 @@ jobs:
         git add markdowns/*.md
         git commit -m $(date '+%Y-%m-%d')
         git pull
-        git push
+        git push https://x-access-token:${{ secrets.GITHUB_TOKEN }}@github.com/duanbiao2000/github-hot.git HEAD:main
