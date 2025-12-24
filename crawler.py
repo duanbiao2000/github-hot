@@ -1,7 +1,7 @@
 # -*- coding: utf-8 -*-
 """
 @author:XuMing(xuming624@qq.com)
-@description: 
+@description:
 """
 import datetime
 import os
@@ -10,6 +10,7 @@ from codecs import open
 import pandas as pd
 import requests
 from pyquery import PyQuery
+import pathlib
 
 
 def git_add_commit_push(date, filename):
@@ -27,21 +28,18 @@ def git_add_commit_push(date, filename):
     无返回值，但会依次执行git add、git commit和git push命令。
     """
     # 构造git add命令，将指定文件添加到暂存区
-    cmd_git_add = 'git add {filename}'.format( filename = filename )
+    cmd_git_add = "git add {filename}".format(filename=filename)
     # 构造git commit命令，使用给定的日期作为提交信息
-    cmd_git_commit = 'git commit -m "{date}"'.format(date = date)
+    cmd_git_commit = 'git commit -m "{date}"'.format(date=date)
     # 构造git push命令，推送到远程仓库的master分支
-    cmd_git_push = 'git push -u origin master'
+    cmd_git_push = "git push -u origin master"
 
-    
     # 执行git add命令
     os.system(cmd_git_add)
     # 执行git commit命令
     os.system(cmd_git_commit)
     # 执行git push命令
     os.system(cmd_git_push)
-    
-
 
 
 def create_markdown(date, filename):
@@ -51,13 +49,16 @@ def create_markdown(date, filename):
     :param date: 日期字符串，用于生成文件标题。
     :param filename: 文件名字符串，指定要创建的Markdown文件的名称。
     """
+    # 创建目录路径（如果不存在）
+    pathlib.Path(filename).parent.mkdir(parents=True, exist_ok=True)
+
     # 使用with语句创建或打开一个名为filename的文件，以写入模式，并指定编码为utf-8
-    with open(filename, 'w', encoding='utf-8') as f:
+    with open(filename, "w", encoding="utf-8") as f:
         # 写入Markdown文件的标题，包含日期的标题信息
         f.write("## " + date + " Github Trending\n")
 
 
-def scrape(language, filename, topk = 5):
+def scrape(language, filename, topk=5):
     """
     根据给定的编程语言获取GitHub上的热门项目，并将结果保存到Markdown文件中。
 
@@ -72,14 +73,14 @@ def scrape(language, filename, topk = 5):
     """
     # 设置请求头，以绕过可能的爬虫检测
     HEADERS = {
-        'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0',
-        'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8',
-        'Accept-Encoding': 'gzip,deflate,sdch',
-        'Accept-Language': 'zh-CN,zh;q=0.8'
+        "User-Agent": "Mozilla/5.0 (Macintosh; Intel Mac OS X 10.7; rv:11.0) Gecko/20100101 Firefox/11.0",
+        "Accept": "text/html,application/xhtml+xml,application/xml;q=0.9,image/webp,*/*;q=0.8",
+        "Accept-Encoding": "gzip,deflate,sdch",
+        "Accept-Language": "zh-CN,zh;q=0.8",
     }
 
     # 构造GitHub趋势页面的URL
-    url = 'https://github.com/trending/{language}'.format(language=language)
+    url = "https://github.com/trending/{language}".format(language=language)
     # 发起GET请求获取页面内容
     r = requests.get(url, headers=HEADERS)
     # 确保请求成功
@@ -88,7 +89,7 @@ def scrape(language, filename, topk = 5):
     # 使用PyQuery解析页面内容
     d = PyQuery(r.content)
     # 获取页面上所有项目的元素
-    items = d('div.Box article.Box-row')
+    items = d("div.Box article.Box-row")
     ds = []
     for item in items:
         # 对每个项目元素进行详细解析
@@ -104,9 +105,9 @@ def scrape(language, filename, topk = 5):
         # 然后通过parent()方法找到其父元素，调用.text()方法获取父元素的文本内容
         # .strip()用于去除首尾空白字符，split()[1]则是将文本按空格分割后取第二个元素，即新的星数
         new_star = i(".f6 svg.octicon-star").parent().text().strip().split()[1]
-        star = int(star.replace(',', ''))
-        fork = int(fork.replace(',', ''))
-        new_star = int(new_star.replace(',', ''))
+        star = int(star.replace(",", ""))
+        fork = int(fork.replace(",", ""))
+        new_star = int(new_star.replace(",", ""))
         ds.append([title, url, description, star, fork, new_star])
     # 将收集的数据保存到Markdown文件中
     save_to_md(ds, filename, language, topk)
@@ -132,8 +133,10 @@ def save_to_md(ds, filename, language, topk=5):
     无
     """
     # 将数据集转换为DataFrame，并进行排序和筛选
-    df = pd.DataFrame(ds, columns=['title', 'url', 'description', 'star', 'fork', 'new_star'])
-    df.sort_values(by=['new_star', 'star', 'fork'], ascending=False, inplace=True)
+    df = pd.DataFrame(
+        ds, columns=["title", "url", "description", "star", "fork", "new_star"]
+    )
+    df.sort_values(by=["new_star", "star", "fork"], ascending=False, inplace=True)
     # 重置数据框(df)的索引，以确保索引连续且与数据行一一对应
     df.reset_index(drop=True, inplace=True)
     df = df.head(topk)
@@ -141,21 +144,27 @@ def save_to_md(ds, filename, language, topk=5):
     # 打开文件并写入数据
     with open(filename, "a", "utf-8") as f:
         # 在文件中添加语言标识
-        f.write('\n### {language}\n'.format(language=language))
+        f.write("\n### {language}\n".format(language=language))
 
         # 遍历DataFrame，将每个项目的信息写入文件
         for i in range(len(df)):
             # 通过iloc方法获取DataFrame中第i行的'title'字段值
-            title = df.iloc[i]['title']
-            url = df.iloc[i]['url']
-            description = df.iloc[i]['description']
-            star = df.iloc[i]['star']
-            fork = df.iloc[i]['fork']
-            new_star = df.iloc[i]['new_star']
+            title = df.iloc[i]["title"]
+            url = df.iloc[i]["url"]
+            description = df.iloc[i]["description"]
+            star = df.iloc[i]["star"]
+            fork = df.iloc[i]["fork"]
+            new_star = df.iloc[i]["new_star"]
 
             # 构造项目信息的Markdown格式字符串
             out = "* [{title}]({url}): {description} ***Star:{stars} Fork:{fork} Today stars:{new_star}***\n".format(
-                title=title, url=url, description=description, stars=star, fork=fork, new_star=new_star)
+                title=title,
+                url=url,
+                description=description,
+                stars=star,
+                fork=fork,
+                new_star=new_star,
+            )
             # 将项目信息写入文件
             f.write(out)
 
@@ -167,26 +176,32 @@ def job():
     抓取指定语言的 trending 信息到文件中，并输出保存文件的路径。
     """
     # 获取当前日期的字符串表示，格式为'YYYY-MM-DD'
-    today_str = datetime.datetime.now().strftime('%Y-%m-%d')
-    # 根据当前日期生成Markdown文件的路径
-    filename = 'markdowns/{date}.md'.format(date=today_str)
+    today_str = datetime.datetime.now().strftime("%Y-%m-%d")
+
+    # 从日期字符串中提取年份和月份，用于创建子目录结构
+    year, month, day = today_str.split("-")
+
+    # 根据当前日期生成Markdown文件的路径，按年/月创建子目录
+    filename = f"markdowns/{year}/{month}/{today_str}.md"
 
     # 创建Markdown文件
     create_markdown(today_str, filename)
 
     # 开始抓取并写入Markdown文件
     # 首先抓取全网 trending 信息，然后分别抓取不同编程语言的 trending 信息
-    scrape('', filename, topk=10)  # full_url = 'https://github.com/trending?since=daily'
-    scrape('python', filename)
-    scrape('java', filename)
-    scrape('javascript', filename)
-    scrape('go', filename)
+    scrape(
+        "", filename, topk=10
+    )  # full_url = 'https://github.com/trending?since=daily'
+    scrape("python", filename)
+    scrape("java", filename)
+    scrape("javascript", filename)
+    scrape("go", filename)
     # 输出Markdown文件保存的路径
-    print('save markdown file to {filename}'.format(filename=filename))
+    print("save markdown file to {filename}".format(filename=filename))
 
     # 将生成的Markdown文件添加到Git仓库并提交（注：此处缺少函数定义）
     # git_add_commit_push(strdate, filename)
 
 
-if __name__ == '__main__':
+if __name__ == "__main__":
     job()
