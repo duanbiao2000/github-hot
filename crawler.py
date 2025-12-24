@@ -58,7 +58,7 @@ def create_markdown(date, filename):
         f.write("## " + date + " Github Trending\n")
 
 
-def scrape(language, filename, topk=5):
+def scrape(language, filename, topk=5):  # sourcery skip: assign-if-exp
     """
     根据给定的编程语言获取GitHub上的热门项目，并将结果保存到Markdown文件中。
 
@@ -94,17 +94,20 @@ def scrape(language, filename, topk=5):
     for item in items:
         # 对每个项目元素进行详细解析
         i = PyQuery(item)
-        title = i(".lh-condensed a").text()
-        description = i("p.col-9").text()
+        title = str(i(".lh-condensed a").text())
+        description = str(i("p.col-9").text())
         url = i(".lh-condensed a").attr("href")
-        url = "https://github.com" + url
-        star_fork = i(".f6 a").text().strip()
+        if url is None:
+            url = ""
+        else:
+            url = "https://github.com" + str(url)
+        star_fork = str(i(".f6 a").text()).strip()
         star, fork = star_fork.split()
         # 从页面元素中提取新的星数
         # 这里使用了链式调用，首先通过类名".f6 svg.octicon-star"定位到星数图标
         # 然后通过parent()方法找到其父元素，调用.text()方法获取父元素的文本内容
         # .strip()用于去除首尾空白字符，split()[1]则是将文本按空格分割后取第二个元素，即新的星数
-        new_star = i(".f6 svg.octicon-star").parent().text().strip().split()[1]
+        new_star = str(i(".f6 svg.octicon-star").parent().text()).strip().split()[1]
         star = int(star.replace(",", ""))
         fork = int(fork.replace(",", ""))
         new_star = int(new_star.replace(",", ""))
@@ -136,7 +139,7 @@ def save_to_md(ds, filename, language, topk=5):
     df = pd.DataFrame(
         ds, columns=["title", "url", "description", "star", "fork", "new_star"]
     )
-    df.sort_values(by=["new_star", "star", "fork"], ascending=False, inplace=True)
+    df = df.sort_values(by=["new_star", "star", "fork"], ascending=False)
     # 重置数据框(df)的索引，以确保索引连续且与数据行一一对应
     df.reset_index(drop=True, inplace=True)
     df = df.head(topk)
